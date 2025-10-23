@@ -1,0 +1,14 @@
+[tools]
+packer = 'latest'
+cosign = 'latest'
+
+[tasks.init]
+run = "packer init ."
+
+[tasks.validate]
+depends = "init"
+run = "packer validate ."
+
+[tasks.build]
+depends = "validate"
+run = "packer build -on-error=ask ."
