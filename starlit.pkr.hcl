@@ -92,6 +92,17 @@ build {
       ],
       [for r in var.extra_repos : "dnf config-manager addrepo --from-repofile='${r}'"],
       [
+        # Kernel swap
+        #"echo '==> Kernel swap to ${var.kernel_target}'",
+        #"pushd /usr/lib/kernel/install.d >/dev/null",
+        #"mv 05-rpmostree.install 05-rpmostree.install.bak",
+        #"mv 50-dracut.install 50-dracut.install.bak",
+        #"printf '%s\\n' '#!/bin/sh' 'exit 0' > 05-rpmostree.install",
+        #"printf '%s\\n' '#!/bin/sh' 'exit 0' > 50-dracut.install",
+        #"chmod +x 05-rpmostree.install 50-dracut.install",
+        #"trap 'echo Restoring kernel hooks; mv -f 05-rpmostree.install.bak 05-rpmostree.install; mv -f 50-dracut.install.bak 50-dracut.install; popd >/dev/null' EXIT",
+        #"dnf -y swap kernel\\* ${var.kernel_target}",
+
         "echo '==> Swapping OpenCL ICD Loader -> ocl-icd'",
         "dnf -y swap --repo=fedora OpenCL-ICD-Loader ocl-icd",
 
@@ -99,10 +110,10 @@ build {
         "echo '==> Installing packages: ${local.extra_packages_joined}'",
         "dnf -y install ${local.extra_packages_joined}",
         "dnf -y group install ${local.package_groups_joined}",
-
-        "echo '==> Kernel swap to ${var.kernel_target}'",
-        "dnf -y swap kernel\\* ${var.kernel_target}",
-
+        #"KERNEL_SUFFIX=\"\"",
+        #"QUALIFIED_KERNEL=\"$(rpm -qa | grep -P 'kernel-(|'\"$KERNEL_SUFFIX\"'-)(\\d+\\.\\d+\\.\d+)' | sed -E 's/kernel-(|'\"$KERNEL_SUFFIX\"'-)//' | tail -n 1)\"",
+        #"/usr/bin/dracut --no-hostonly --kver \"$QUALIFIED_KERNEL\" --reproducible --zstd -v --add ostree -f \"/lib/modules/$QUALIFIED_KERNEL/initramfs.img\"",
+        # Done :)
         "echo '==> Build complete.'"
       ]
     )
