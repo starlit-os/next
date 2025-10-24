@@ -1,7 +1,8 @@
 # Copr repositories
+jdxcode/mise
+scottames/ghostty
 ublue-os/packages
 ublue-os/staging
-jdxcode/mise
 
 # For future reference
 #bieszczaders/kernel-cachyos

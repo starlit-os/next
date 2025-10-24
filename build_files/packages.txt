@@ -1,10 +1,6 @@
 # Packages to install
-fish
-fzf
-glow
-gum
 libcamera{,-{v4l2,gstreamer,tools}}
-mise
+ghostty
 #netbird{,-ui} - Needs opt fix?
 plymouth
 plymouth-system-theme
