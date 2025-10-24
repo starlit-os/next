@@ -1,4 +1,3 @@
-# Packer template: single provisioner, unconditional kernel & OpenCL swaps.
 packer {
   required_plugins {
     docker = {
@@ -28,7 +27,7 @@ variable "list_files" {
 }
 variable "build_ref"            {
     type = string
-    default = "dev"
+    default = formatdate("YYYYMMDD", timestamp())
 }
 variable "kernel_target"            {
     type = string
@@ -107,6 +106,6 @@ build {
 
   post-processor "docker-tag" {
     repository = "starlit-os-next"
-    tags       = [var.image_tag, var.build_ref]
+    tags       = [var.image_tag, var.build_ref, "${var.image_tag}.${var.build_ref}"]
   }
 }
