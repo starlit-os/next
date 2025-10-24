@@ -61,6 +61,11 @@ build {
   name    = "starlit-os-next"
   sources = ["source.docker.fedora-bootc"]
 
+  provisioner "file" {
+    source      = "system_files/"
+    destination = "/"
+  }
+
   provisioner "shell" {
     inline = concat(
       [

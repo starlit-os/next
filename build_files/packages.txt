@@ -5,6 +5,7 @@ glow
 gum
 libcamera{,-{v4l2,gstreamer,tools}}
 mise
+#netbird{,-ui} - Needs opt fix?
 plymouth
 plymouth-system-theme
 systemd-container
@@ -12,6 +13,6 @@ tuned-ppd
 ublue-os-luks
 ublue-os-udev-rules
 uupd
-vicinae
+#vicinae - Not in F43 yet :(
 wireguard-tools
 wl-clipboard
