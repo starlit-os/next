@@ -17,53 +17,37 @@ variable "base_image"           {
     type = string
     default = "quay.io/fedora/fedora-bootc:43"
 }
-variable "coprs"                {
-    type = list(string)
-    default = ["ublue-os/packages","ublue-os/staging","bieszczaders/kernel-cachyos"]
-}
-variable "extra_repos"          {
-    type = list(string)
-    default = ["https://negativo17.org/repos/fedora-multimedia.repo"]
-}
-variable "kernel_target"        {
-    type = string
-    default = "kernel-cachyos"
-}
-variable "extra_packages"       {
-    type = list(string)
-    default = [
-        "plymouth",
-	    "plymouth-system-theme",
-	    "systemd-container",
-	    "libcamera{,-{v4l2,gstreamer,tools}}",
-        "ublue-os-luks",
-        "ublue-os-udev-rules",
-        "fish",
-        "btrfs-progs",
-	    "buildah",
-	    "fzf",
-    	"glow",
-    	"gum",
-	    "tuned-ppd",
-	    "wireguard-tools",
-	    "wl-clipboard",
-    	"uupd"
-    ]
-}
-variable "package_groups"       {
-    type = list(string)
-    default = [
-        "cosmic-desktop"
-    ]
+variable "list_files" {
+  type = list(string)
+  default = [
+    "coprs",
+    "packages",
+    "package_groups",
+    "repos"
+  ]
 }
 variable "build_ref"            {
     type = string
     default = "dev"
 }
-
+variable "kernel_target"            {
+    type = string
+    default = ""
+}
 locals {
-  extra_packages_joined = join(" ", var.extra_packages)
-  package_groups_joined = join(" ", var.package_groups)
+  parsed_lists = {
+    for name in var.list_files :
+    name => [
+      for line in split("\n", trimspace(file("build_files/${name}.txt"))) :
+      trimspace(line)
+      if trimspace(line) != "" && !startswith(trimspace(line), "#")
+    ]
+  }
+
+  coprs = local.parsed_lists["coprs"]
+  packages = join(" ", local.parsed_lists["packages"])
+  package_groups = join(" ", local.parsed_lists["package_groups"])
+  repos = local.parsed_lists["repos"]
 }
 
 source "docker" "fedora-bootc" {
@@ -86,36 +70,33 @@ build {
         "mkdir /var/roothome",
         "echo '==> Enabling Copr repos'"
       ],
-      [for c in var.coprs : "dnf5 -y copr enable ${c}"],
+      [for c in local.coprs : "dnf5 -y copr enable ${c}"],
+      ["echo '==> Adding external repo files'"],
+      [for r in local.repos : "dnf config-manager addrepo --from-repofile='${r}'"],
       [
-        "echo '==> Adding external repo files'"
-      ],
-      [for r in var.extra_repos : "dnf config-manager addrepo --from-repofile='${r}'"],
-      [
-        # Kernel swap
-        #"echo '==> Kernel swap to ${var.kernel_target}'",
-        #"pushd /usr/lib/kernel/install.d >/dev/null",
-        #"mv 05-rpmostree.install 05-rpmostree.install.bak",
-        #"mv 50-dracut.install 50-dracut.install.bak",
-        #"printf '%s\\n' '#!/bin/sh' 'exit 0' > 05-rpmostree.install",
-        #"printf '%s\\n' '#!/bin/sh' 'exit 0' > 50-dracut.install",
-        #"chmod +x 05-rpmostree.install 50-dracut.install",
-        #"trap 'echo Restoring kernel hooks; mv -f 05-rpmostree.install.bak 05-rpmostree.install; mv -f 50-dracut.install.bak 50-dracut.install; popd >/dev/null' EXIT",
-        #"dnf -y swap kernel\\* ${var.kernel_target}",
-
-        "echo '==> Swapping OpenCL ICD Loader -> ocl-icd'",
-        "dnf -y swap --repo=fedora OpenCL-ICD-Loader ocl-icd",
-
         # Packages
-        "echo '==> Installing packages: ${local.extra_packages_joined}'",
-        "dnf -y install ${local.extra_packages_joined}",
-        "dnf -y group install ${local.package_groups_joined}",
-        #"KERNEL_SUFFIX=\"\"",
-        #"QUALIFIED_KERNEL=\"$(rpm -qa | grep -P 'kernel-(|'\"$KERNEL_SUFFIX\"'-)(\\d+\\.\\d+\\.\d+)' | sed -E 's/kernel-(|'\"$KERNEL_SUFFIX\"'-)//' | tail -n 1)\"",
-        #"/usr/bin/dracut --no-hostonly --kver \"$QUALIFIED_KERNEL\" --reproducible --zstd -v --add ostree -f \"/lib/modules/$QUALIFIED_KERNEL/initramfs.img\"",
-        # Done :)
-        "echo '==> Build complete.'"
-      ]
+        "echo '==> Installing packages'",
+        "dnf -y swap --repo=fedora OpenCL-ICD-Loader ocl-icd",
+        "dnf -y install ${local.packages}",
+        "dnf -y group install ${local.package_groups}"
+      ],
+      # Optional kernel swap
+      var.kernel_target != "" ? [
+        # Kernel swap
+        "echo '==> Kernel swap to ${var.kernel_target}'",
+        "pushd /usr/lib/kernel/install.d >/dev/null",
+        "mv 05-rpmostree.install 05-rpmostree.install.bak",
+        "mv 50-dracut.install 50-dracut.install.bak",
+        "printf '%s\\n' '#!/bin/sh' 'exit 0' > 05-rpmostree.install",
+        "printf '%s\\n' '#!/bin/sh' 'exit 0' > 50-dracut.install",
+        "chmod +x 05-rpmostree.install 50-dracut.install",
+        "trap 'echo Restoring kernel hooks; mv -f 05-rpmostree.install.bak 05-rpmostree.install; mv -f 50-dracut.install.bak 50-dracut.install; popd >/dev/null' EXIT",
+        "dnf -y swap kernel\\* ${var.kernel_target}",
+        "KERNEL_SUFFIX=\"\"",
+        "QUALIFIED_KERNEL=\"$(rpm -qa | grep -P 'kernel-(|'\"$KERNEL_SUFFIX\"'-)(\\d+\\.\\d+\\.\\d+)' | sed -E 's/kernel-(|'\"$KERNEL_SUFFIX\"'-)//' | tail -n 1)\"",
+        "/usr/bin/dracut --no-hostonly --kver \"$QUALIFIED_KERNEL\" --reproducible --zstd -v --add ostree -f \"/lib/modules/$QUALIFIED_KERNEL/initramfs.img\"",
+      ] : [],
+      ["bootc container lint"]
     )
   }
 

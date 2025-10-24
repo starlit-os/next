@@ -1,0 +1,17 @@
+# Packages to install
+fish
+fzf
+glow
+gum
+libcamera{,-{v4l2,gstreamer,tools}}
+mise
+plymouth
+plymouth-system-theme
+systemd-container
+tuned-ppd
+ublue-os-luks
+ublue-os-udev-rules
+uupd
+vicinae
+wireguard-tools
+wl-clipboard

@@ -1,0 +1,8 @@
+# Copr repositories
+ublue-os/packages
+ublue-os/staging
+jdxcode/mise
+gvalkov/vicinae
+
+# For future reference
+#bieszczaders/kernel-cachyos
