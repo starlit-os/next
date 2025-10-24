@@ -25,10 +25,6 @@ variable "list_files" {
     "repos"
   ]
 }
-variable "build_ref"            {
-    type = string
-    default = formatdate("YYYYMMDD", timestamp())
-}
 variable "kernel_target"            {
     type = string
     default = ""
@@ -47,6 +43,7 @@ locals {
   packages = join(" ", local.parsed_lists["packages"])
   package_groups = join(" ", local.parsed_lists["package_groups"])
   repos = local.parsed_lists["repos"]
+  build_ref = formatdate("YYYYMMDD", timestamp())
 }
 
 source "docker" "fedora-bootc" {
@@ -69,7 +66,7 @@ build {
     inline = concat(
       [
         "set -xeuo pipefail",
-        "echo '==> Starting customization (build_ref=${var.build_ref})'",
+        "echo '==> Starting customization (build_ref=${local.build_ref})'",
         "dnf5 -y install \"dnf5-command(copr)\"",
         "mkdir /var/roothome",
         "echo '==> Enabling Copr repos'"
@@ -106,6 +103,6 @@ build {
 
   post-processor "docker-tag" {
     repository = "starlit-os-next"
-    tags       = [var.image_tag, var.build_ref, "${var.image_tag}.${var.build_ref}"]
+    tags       = [var.image_tag, local.build_ref, "${var.image_tag}.${local.build_ref}"]
   }
 }
