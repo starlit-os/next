@@ -106,7 +106,7 @@ build {
   }
 
   post-processor "docker-tag" {
-    repository = "local/starlit-os-next"
+    repository = "starlit-os-next"
     tags       = [var.image_tag, var.build_ref]
   }
 }
